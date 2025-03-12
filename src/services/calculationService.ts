@@ -1,50 +1,119 @@
 import { Expense, ExpenseCalculation } from '../models/types';
+import { getCategorySettings } from './storageService';
 
 /**
  * Calculate daily, monthly, and yearly values for a one-time expense
  */
-export const calculateOnceExpense = (amount: number): ExpenseCalculation => {
-  return {
-    daily: amount,
-    monthly: amount * 30, // Simplified: month = 30 days
-    yearly: amount * 365
-  };
+export const calculateOnceExpense = (amount: number, category: string): ExpenseCalculation => {
+  const { frequency, annualCount } = getCategorySettings(category);
+  
+  if (frequency === 'regular') {
+    // For regular expenses (like daily meals), treat as daily occurrence
+    return {
+      daily: amount,
+      monthly: amount * 30, // Simplified: month = 30 days
+      yearly: amount * 365
+    };
+  } else {
+    // For irregular expenses (like clothing, party fees), use annual count
+    // If annual count is 0, default to 1 to avoid division by zero
+    const count = Math.max(annualCount, 1);
+    
+    return {
+      daily: (amount * count) / 365,
+      monthly: (amount * count) / 12,
+      yearly: amount * count
+    };
+  }
 };
 
 /**
  * Calculate daily, monthly, and yearly values for a monthly expense
  */
-export const calculateMonthlyExpense = (amount: number): ExpenseCalculation => {
-  return {
-    daily: amount / 30, // Simplified: month = 30 days
-    monthly: amount,
-    yearly: amount * 12
-  };
+export const calculateMonthlyExpense = (amount: number, category: string): ExpenseCalculation => {
+  const { frequency, annualCount } = getCategorySettings(category);
+  
+  if (frequency === 'regular') {
+    // For regular expenses, use standard monthly calculation
+    return {
+      daily: amount / 30, // Simplified: month = 30 days
+      monthly: amount,
+      yearly: amount * 12
+    };
+  } else {
+    // For irregular expenses, adjust based on annual count
+    const count = Math.max(annualCount, 1);
+    const annualAmount = amount * 12; // Convert monthly to annual
+    
+    // Adjust annual amount based on actual occurrence count
+    const adjustedAnnualAmount = (annualAmount / 12) * count;
+    
+    return {
+      daily: adjustedAnnualAmount / 365,
+      monthly: adjustedAnnualAmount / 12,
+      yearly: adjustedAnnualAmount
+    };
+  }
 };
 
 /**
  * Calculate daily, monthly, and yearly values for a yearly expense
  */
-export const calculateYearlyExpense = (amount: number): ExpenseCalculation => {
-  return {
-    daily: amount / 365,
-    monthly: amount / 12,
-    yearly: amount
-  };
+export const calculateYearlyExpense = (amount: number, category: string): ExpenseCalculation => {
+  const { frequency, annualCount } = getCategorySettings(category);
+  
+  if (frequency === 'regular') {
+    // For regular expenses, use standard yearly calculation
+    return {
+      daily: amount / 365,
+      monthly: amount / 12,
+      yearly: amount
+    };
+  } else {
+    // For irregular expenses, adjust based on annual count
+    const count = Math.max(annualCount, 1);
+    
+    // Adjust annual amount based on actual occurrence count
+    const adjustedAnnualAmount = (amount / 1) * count;
+    
+    return {
+      daily: adjustedAnnualAmount / 365,
+      monthly: adjustedAnnualAmount / 12,
+      yearly: adjustedAnnualAmount
+    };
+  }
 };
 
 /**
  * Calculate daily, monthly, and yearly values for a lifetime investment
  */
-export const calculateLifetimeExpense = (amount: number, userAge: number): ExpenseCalculation => {
+export const calculateLifetimeExpense = (amount: number, userAge: number, category: string): ExpenseCalculation => {
   // Calculate remaining years based on age
   const years = userAge >= 60 ? 20 : (80 - userAge);
   
-  return {
-    daily: amount / (years * 365),
-    monthly: amount / (years * 12),
-    yearly: amount / years
-  };
+  const { frequency, annualCount } = getCategorySettings(category);
+  
+  if (frequency === 'regular') {
+    // For regular expenses, use standard lifetime calculation
+    return {
+      daily: amount / (years * 365),
+      monthly: amount / (years * 12),
+      yearly: amount / years
+    };
+  } else {
+    // For irregular expenses, adjust based on annual count
+    const count = Math.max(annualCount, 1);
+    
+    // Adjust lifetime amount based on actual occurrence count
+    // For lifetime expenses, we assume the count applies to each year of the remaining lifetime
+    const adjustedLifetimeAmount = amount * (count / 1);
+    
+    return {
+      daily: adjustedLifetimeAmount / (years * 365),
+      monthly: adjustedLifetimeAmount / (years * 12),
+      yearly: adjustedLifetimeAmount / years
+    };
+  }
 };
 
 /**
@@ -53,13 +122,13 @@ export const calculateLifetimeExpense = (amount: number, userAge: number): Expen
 export const calculateExpense = (expense: Expense, userAge: number): ExpenseCalculation => {
   switch (expense.type) {
     case 'once':
-      return calculateOnceExpense(expense.amount);
+      return calculateOnceExpense(expense.amount, expense.category);
     case 'monthly':
-      return calculateMonthlyExpense(expense.amount);
+      return calculateMonthlyExpense(expense.amount, expense.category);
     case 'yearly':
-      return calculateYearlyExpense(expense.amount);
+      return calculateYearlyExpense(expense.amount, expense.category);
     case 'lifetime':
-      return calculateLifetimeExpense(expense.amount, userAge);
+      return calculateLifetimeExpense(expense.amount, userAge, expense.category);
     default:
       return { daily: 0, monthly: 0, yearly: 0 };
   }

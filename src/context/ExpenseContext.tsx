@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Expense, UserSettings } from '../models/types';
+import { Expense, UserSettings, DEFAULT_CATEGORY_SETTINGS } from '../models/types';
 import {
   getExpenses,
   saveExpenses,
   getUserSettings,
   saveUserSettings,
-  resetAllData
+  resetAllData,
+  updateCategorySettings
 } from '../services/storageService';
 
 interface ExpenseContextType {
@@ -16,6 +17,8 @@ interface ExpenseContextType {
   deleteExpense: (id: string) => void;
   userSettings: UserSettings;
   updateUserSettings: (settings: UserSettings) => void;
+  updateCategoryFrequency: (category: string, frequency: 'regular' | 'irregular') => void;
+  updateCategoryAnnualCount: (category: string, annualCount: number) => void;
   resetData: () => void;
 }
 
@@ -27,7 +30,10 @@ interface ExpenseProviderProps {
 
 export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [userSettings, setUserSettings] = useState<UserSettings>({ age: 30 });
+  const [userSettings, setUserSettings] = useState<UserSettings>({ 
+    age: 30,
+    categorySettings: DEFAULT_CATEGORY_SETTINGS
+  });
 
   // Load data from localStorage on initial render
   useEffect(() => {
@@ -69,12 +75,65 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     setUserSettings(settings);
     saveUserSettings(settings);
   };
+  
+  // Update category frequency
+  const updateCategoryFrequency = (category: string, frequency: 'regular' | 'irregular') => {
+    const currentSettings = userSettings.categorySettings.find(setting => setting.category === category);
+    const annualCount = currentSettings?.annualCount || 0;
+    
+    updateCategorySettings(category, frequency, annualCount);
+    
+    // Update local state
+    setUserSettings(prevSettings => {
+      const newCategorySettings = [...prevSettings.categorySettings];
+      const index = newCategorySettings.findIndex(setting => setting.category === category);
+      
+      if (index !== -1) {
+        newCategorySettings[index] = { ...newCategorySettings[index], frequency };
+      } else {
+        newCategorySettings.push({ category, frequency, annualCount });
+      }
+      
+      return {
+        ...prevSettings,
+        categorySettings: newCategorySettings
+      };
+    });
+  };
+  
+  // Update category annual count
+  const updateCategoryAnnualCount = (category: string, annualCount: number) => {
+    const currentSettings = userSettings.categorySettings.find(setting => setting.category === category);
+    const frequency = currentSettings?.frequency || 'regular';
+    
+    updateCategorySettings(category, frequency, annualCount);
+    
+    // Update local state
+    setUserSettings(prevSettings => {
+      const newCategorySettings = [...prevSettings.categorySettings];
+      const index = newCategorySettings.findIndex(setting => setting.category === category);
+      
+      if (index !== -1) {
+        newCategorySettings[index] = { ...newCategorySettings[index], annualCount };
+      } else {
+        newCategorySettings.push({ category, frequency, annualCount });
+      }
+      
+      return {
+        ...prevSettings,
+        categorySettings: newCategorySettings
+      };
+    });
+  };
 
   // Reset all data
   const resetData = () => {
     resetAllData();
     setExpenses([]);
-    setUserSettings({ age: 30 });
+    setUserSettings({ 
+      age: 30,
+      categorySettings: DEFAULT_CATEGORY_SETTINGS
+    });
   };
 
   const value = {
@@ -84,6 +143,8 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     deleteExpense,
     userSettings,
     updateUserSettings,
+    updateCategoryFrequency,
+    updateCategoryAnnualCount,
     resetData
   };
 

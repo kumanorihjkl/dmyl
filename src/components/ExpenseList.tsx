@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { useExpense } from '../context/ExpenseContext';
-import { Expense, CATEGORY_DISPLAY_NAMES, EXPENSE_TYPE_DISPLAY_NAMES } from '../models/types';
+import { 
+  Expense, 
+  CATEGORY_DISPLAY_NAMES, 
+  EXPENSE_TYPE_DISPLAY_NAMES,
+  FREQUENCY_DISPLAY_NAMES
+} from '../models/types';
 import { calculateExpense, formatCurrency } from '../services/calculationService';
+import { getCategorySettings } from '../services/storageService';
 
 const ExpenseList: React.FC = () => {
   const { expenses, deleteExpense, userSettings } = useExpense();
@@ -45,9 +51,12 @@ const ExpenseList: React.FC = () => {
     }
   };
   
-  // Get background color based on category
+  // Get background color based on category and frequency
   const getCategoryColor = (category: string): string => {
-    const colors: Record<string, string> = {
+    const { frequency } = getCategorySettings(category);
+    
+    // Base colors for regular expenses
+    const regularColors: Record<string, string> = {
       food: 'bg-red-100',
       housing: 'bg-blue-100',
       transportation: 'bg-green-100',
@@ -56,10 +65,30 @@ const ExpenseList: React.FC = () => {
       entertainment: 'bg-pink-100',
       education: 'bg-indigo-100',
       personal: 'bg-orange-100',
-      other: 'bg-gray-100'
+      other: 'bg-gray-100',
+      clothing: 'bg-pink-200',
+      party: 'bg-purple-200',
+      travel: 'bg-blue-200',
+      appliance: 'bg-yellow-200'
     };
     
-    return colors[category] || 'bg-gray-100';
+    // Use a striped pattern for irregular expenses
+    if (frequency === 'irregular') {
+      return (regularColors[category] || 'bg-gray-100') + ' bg-stripes';
+    }
+    
+    return regularColors[category] || 'bg-gray-100';
+  };
+  
+  // Get frequency display for a category
+  const getFrequencyDisplay = (category: string): string => {
+    const { frequency, annualCount } = getCategorySettings(category);
+    
+    if (frequency === 'irregular' && annualCount > 0) {
+      return `${FREQUENCY_DISPLAY_NAMES[frequency]} (${annualCount}回/年)`;
+    }
+    
+    return FREQUENCY_DISPLAY_NAMES[frequency];
   };
   
   return (
@@ -137,9 +166,14 @@ const ExpenseList: React.FC = () => {
                     {formatDate(expense.date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(expense.category)}`}>
-                      {CATEGORY_DISPLAY_NAMES[expense.category]}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(expense.category)}`}>
+                        {CATEGORY_DISPLAY_NAMES[expense.category]}
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        {getFrequencyDisplay(expense.category)}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {getDisplayValue(expense)}

@@ -40,3 +40,14 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Striped background pattern for irregular expenses */
+.bg-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    rgba(255, 255, 255, 0.5) 5px,
+    rgba(255, 255, 255, 0.5) 10px
+  );
+}

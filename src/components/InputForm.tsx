@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useExpense } from '../context/ExpenseContext';
-import { EXPENSE_CATEGORIES, CATEGORY_DISPLAY_NAMES, EXPENSE_TYPE_DISPLAY_NAMES } from '../models/types';
+import { 
+  EXPENSE_CATEGORIES, 
+  CATEGORY_DISPLAY_NAMES, 
+  EXPENSE_TYPE_DISPLAY_NAMES 
+} from '../models/types';
 
 const InputForm: React.FC = () => {
   const { addExpense } = useExpense();

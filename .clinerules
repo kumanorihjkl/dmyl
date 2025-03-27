@@ -1,0 +1,58 @@
+# DMYL Expense Tracker Application
+
+## Project Overview
+This is a React TypeScript expense tracking application built with Vite. The application allows users to track expenses, view summaries, and manage their financial data.
+
+## Technology Stack
+- React (with TypeScript)
+- Vite as build tool
+- Tailwind CSS for styling
+- Context API for state management
+
+## Project Structure
+
+### Core Files
+- `src/App.tsx` - Main application component
+- `src/main.tsx` - Entry point for the application
+- `src/index.css` - Global CSS styles
+- `src/App.css` - Application-specific styles
+
+### Components
+- `src/components/Dashboard.tsx` - Main dashboard view
+- `src/components/ExpenseList.tsx` - Displays list of expenses
+- `src/components/Header.tsx` - Application header
+- `src/components/InputForm.tsx` - Form for adding new expenses
+- `src/components/Layout.tsx` - Layout wrapper component
+- `src/components/Settings.tsx` - User settings interface
+
+### State Management
+- `src/context/ExpenseContext.tsx` - Context provider for expense data
+
+### Data Models
+- `src/models/types.ts` - TypeScript interfaces and types
+
+### Services
+- `src/services/calculationService.ts` - Handles expense calculations
+- `src/services/storageService.ts` - Manages data persistence
+
+## Data Flow
+1. User inputs expense data through `InputForm`
+2. Data is processed and stored via `ExpenseContext` and `storageService`
+3. Calculations are performed using `calculationService`
+4. UI components like `ExpenseList` and `Dashboard` display the data
+
+## Development Workflow
+1. Run `npm install` to install dependencies
+2. Run `npm run dev` to start the development server
+3. Make changes to components, services, or context as needed
+4. Test changes in the browser
+
+## Build Process
+- Run `npm run build` to create a production build
+- The build output will be in the `dist` directory
+
+## Key Conventions
+- TypeScript interfaces are defined in `models/types.ts`
+- Context API is used for global state management
+- Local storage is used for data persistence (via `storageService`)
+- Components follow a functional component pattern with hooks

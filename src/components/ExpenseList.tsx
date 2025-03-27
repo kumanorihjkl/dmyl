@@ -11,7 +11,7 @@ import { getCategorySettings } from '../services/storageService';
 
 const ExpenseList: React.FC = () => {
   const { expenses, deleteExpense, userSettings } = useExpense();
-  const [displayMode, setDisplayMode] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
+  const [displayMode, setDisplayMode] = useState<'raw' | 'daily' | 'monthly' | 'yearly'>('monthly');
   
   // Sort expenses by date (newest first)
   const sortedExpenses = [...expenses].sort((a, b) => 
@@ -30,6 +30,22 @@ const ExpenseList: React.FC = () => {
   
   // Get display value based on mode
   const getDisplayValue = (expense: Expense): string => {
+    if (displayMode === 'raw') {
+      // Display raw amount with appropriate suffix based on expense type
+      switch (expense.type) {
+        case 'once':
+          return formatCurrency(expense.amount);
+        case 'monthly':
+          return formatCurrency(expense.amount) + '/月';
+        case 'yearly':
+          return formatCurrency(expense.amount) + '/年';
+        case 'lifetime':
+          return formatCurrency(expense.amount) + ' (生涯)';
+        default:
+          return formatCurrency(expense.amount);
+      }
+    }
+    
     const calculation = calculateExpense(expense, userSettings.age);
     
     switch (displayMode) {
@@ -97,6 +113,16 @@ const ExpenseList: React.FC = () => {
         <h2 className="text-2xl font-semibold text-gray-800 mb-4 sm:mb-0">支出一覧</h2>
         
         <div className="flex space-x-2">
+          <button
+            onClick={() => setDisplayMode('raw')}
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors duration-150 
+              ${displayMode === 'raw' 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+          >
+            生の値
+          </button>
           <button
             onClick={() => setDisplayMode('daily')}
             className={`px-3 py-1 rounded-md text-sm font-medium transition-colors duration-150 

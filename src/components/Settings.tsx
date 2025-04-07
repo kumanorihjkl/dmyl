@@ -8,12 +8,18 @@ import {
 import { estimateAnnualCount } from '../services/storageService';
 
 const Settings: React.FC = () => {
-  const { userSettings, updateUserSettings, resetData } = useExpense();
+  const { userSettings, updateUserSettings, resetData, addCategory } = useExpense();
   const [age, setAge] = useState(userSettings.age.toString());
   const [categorySettings, setCategorySettings] = useState<CategorySettings[]>(userSettings.categorySettings);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showSaveNotification, setShowSaveNotification] = useState(false);
   const [showEstimateConfirm, setShowEstimateConfirm] = useState(false);
+  const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
+  const [newCategory, setNewCategory] = useState({
+    displayName: '',
+    annualCount: '12',
+    isLongTermInvestment: false
+  });
   
   // Load category settings from user settings
   useEffect(() => {
@@ -90,6 +96,47 @@ const Settings: React.FC = () => {
     setTimeout(() => setShowSaveNotification(false), 3000);
   };
   
+  // Handle new category input change
+  const handleNewCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setNewCategory(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Handle add new category
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate inputs
+    if (!newCategory.displayName) {
+      alert('表示名は必須です。');
+      return;
+    }
+    
+    // Add the new category
+    addCategory(
+      newCategory.displayName,
+      parseInt(newCategory.annualCount) || 12,
+      newCategory.isLongTermInvestment
+    );
+    
+    // Reset form
+    setNewCategory({
+      displayName: '',
+      annualCount: '12',
+      isLongTermInvestment: false
+    });
+    
+    // Hide form
+    setShowAddCategoryForm(false);
+    
+    // Show notification
+    setShowSaveNotification(true);
+    setTimeout(() => setShowSaveNotification(false), 3000);
+  };
+
   // Handle save settings
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +149,8 @@ const Settings: React.FC = () => {
     
     updateUserSettings({
       age: ageValue,
-      categorySettings
+      categorySettings,
+      customCategories: userSettings.customCategories
     });
     
     // Show notification
@@ -161,13 +209,22 @@ const Settings: React.FC = () => {
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-medium text-gray-800">カテゴリ設定</h3>
-            <button
-              type="button"
-              onClick={() => setShowEstimateConfirm(true)}
-              className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150"
-            >
-              過去データから推定
-            </button>
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowAddCategoryForm(true)}
+                className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-150"
+              >
+                新規カテゴリ追加
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowEstimateConfirm(true)}
+                className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150"
+              >
+                過去データから推定
+              </button>
+            </div>
           </div>
           
           <div className="bg-gray-50 p-4 rounded-lg">
@@ -306,6 +363,79 @@ const Settings: React.FC = () => {
         </div>
       )}
       
+      {/* Add Category Form */}
+      {showAddCategoryForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">新規カテゴリ追加</h3>
+            
+            <form onSubmit={handleAddCategory}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+                    表示名
+                  </label>
+                  <input
+                    type="text"
+                    id="displayName"
+                    name="displayName"
+                    value={newCategory.displayName}
+                    onChange={handleNewCategoryChange}
+                    placeholder="例: 書籍"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="annualCount" className="block text-sm font-medium text-gray-700 mb-1">
+                    年間発生回数
+                  </label>
+                  <input
+                    type="number"
+                    id="annualCount"
+                    name="annualCount"
+                    value={newCategory.annualCount}
+                    onChange={handleNewCategoryChange}
+                    min="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isLongTermInvestment"
+                      checked={newCategory.isLongTermInvestment}
+                      onChange={handleNewCategoryChange}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">長期投資</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategoryForm(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-150"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-150"
+                >
+                  追加
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Notification */}
       {showSaveNotification && (
         <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg">

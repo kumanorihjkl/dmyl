@@ -1,4 +1,11 @@
-import { Expense, UserSettings, DEFAULT_CATEGORY_SETTINGS } from '../models/types';
+import { 
+  Expense, 
+  UserSettings, 
+  DEFAULT_CATEGORY_SETTINGS,
+  EXPENSE_CATEGORIES,
+  CATEGORY_DISPLAY_NAMES,
+  addCategory
+} from '../models/types';
 
 // Keys for localStorage
 const EXPENSES_KEY = 'expenses';
@@ -70,6 +77,52 @@ export const getUserSettings = (): UserSettings => {
   // If the stored settings don't have categorySettings, add the default ones
   if (!parsedSettings.categorySettings) {
     parsedSettings.categorySettings = DEFAULT_CATEGORY_SETTINGS;
+  }
+  
+  // Restore custom categories if they exist
+  if (parsedSettings.customCategories && Array.isArray(parsedSettings.customCategories)) {
+    // For each custom category, ensure it's added to the global categories
+    parsedSettings.customCategories.forEach(categoryId => {
+      const categorySetting = parsedSettings.categorySettings.find(
+        setting => setting.category === categoryId
+      );
+      
+      if (categorySetting) {
+        // If the category is not already in the global lists, add it
+        if (!EXPENSE_CATEGORIES.includes(categoryId)) {
+          // Get the display name from the settings or use the category ID as fallback
+          const displayName = CATEGORY_DISPLAY_NAMES[categoryId] || categoryId;
+          
+          // We need to manually add this category to the global lists
+          // But we can't directly modify the imported variables, so we'll use a workaround
+          
+          // First, create a temporary function to add a category with a specific ID
+          const addCategoryWithId = (id: string, name: string, count: number, isLTI: boolean) => {
+            // Use the module's exported variables indirectly
+            if (!EXPENSE_CATEGORIES.includes(id)) {
+              // @ts-ignore - We know this is mutable even though TypeScript thinks it's not
+              EXPENSE_CATEGORIES.push(id);
+              // @ts-ignore
+              CATEGORY_DISPLAY_NAMES[id] = name;
+              // @ts-ignore
+              DEFAULT_CATEGORY_SETTINGS.push({ 
+                category: id, 
+                annualCount: count, 
+                isLongTermInvestment: isLTI 
+              });
+            }
+          };
+          
+          // Call our helper function
+          addCategoryWithId(
+            categoryId, 
+            displayName, 
+            categorySetting.annualCount, 
+            categorySetting.isLongTermInvestment
+          );
+        }
+      }
+    });
   }
   
   return parsedSettings;

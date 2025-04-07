@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Expense, UserSettings, DEFAULT_CATEGORY_SETTINGS } from '../models/types';
+import { 
+  Expense, 
+  UserSettings, 
+  DEFAULT_CATEGORY_SETTINGS, 
+  addCategory as addCategoryToTypes 
+} from '../models/types';
 import {
   getExpenses,
   saveExpenses,
@@ -19,6 +24,7 @@ interface ExpenseContextType {
   updateUserSettings: (settings: UserSettings) => void;
   updateCategoryAnnualCount: (category: string, annualCount: number) => void;
   updateCategoryLongTermInvestment: (category: string, isLongTermInvestment: boolean) => void;
+  addCategory: (displayName: string, annualCount?: number, isLongTermInvestment?: boolean) => string;
   resetData: () => void;
 }
 
@@ -139,6 +145,49 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     });
   };
 
+  // Add a new category
+  const addCategory = (
+    displayName: string, 
+    annualCount: number = 12, 
+    isLongTermInvestment: boolean = false
+  ): string => {
+    // Add category to types and get the generated ID
+    const categoryId = addCategoryToTypes(displayName, annualCount, isLongTermInvestment);
+    
+    // Update user settings with the new category
+    setUserSettings(prevSettings => {
+      const newCategorySettings = [...prevSettings.categorySettings];
+      const index = newCategorySettings.findIndex(setting => setting.category === categoryId);
+      
+      if (index === -1) {
+        newCategorySettings.push({ 
+          category: categoryId, 
+          annualCount, 
+          isLongTermInvestment 
+        });
+      }
+      
+      // Track custom categories
+      const customCategories = prevSettings.customCategories || [];
+      if (!customCategories.includes(categoryId)) {
+        customCategories.push(categoryId);
+      }
+      
+      const updatedSettings = {
+        ...prevSettings,
+        categorySettings: newCategorySettings,
+        customCategories
+      };
+      
+      // Save to storage
+      saveUserSettings(updatedSettings);
+      
+      return updatedSettings;
+    });
+    
+    return categoryId;
+  };
+
   const value = {
     expenses,
     addExpense,
@@ -148,6 +197,7 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     updateUserSettings,
     updateCategoryAnnualCount,
     updateCategoryLongTermInvestment,
+    addCategory,
     resetData
   };
 

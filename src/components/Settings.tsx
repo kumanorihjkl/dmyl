@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useExpense } from '../context/ExpenseContext';
 import { 
   EXPENSE_CATEGORIES, 
-  CATEGORY_DISPLAY_NAMES, 
-  FREQUENCY_DISPLAY_NAMES,
+  CATEGORY_DISPLAY_NAMES,
   CategorySettings
 } from '../models/types';
 import { estimateAnnualCount } from '../services/storageService';
@@ -26,21 +25,6 @@ const Settings: React.FC = () => {
     setAge(e.target.value);
   };
   
-  // Handle category frequency change
-  const handleFrequencyChange = (category: string, frequency: 'regular' | 'irregular') => {
-    setCategorySettings(prevSettings => {
-      const newSettings = [...prevSettings];
-      const index = newSettings.findIndex(setting => setting.category === category);
-      
-      if (index !== -1) {
-        newSettings[index] = { ...newSettings[index], frequency };
-      } else {
-        newSettings.push({ category, frequency, annualCount: 0, isLongTermInvestment: false });
-      }
-      
-      return newSettings;
-    });
-  };
   
   // Handle annual count change
   const handleAnnualCountChange = (category: string, value: string) => {
@@ -57,7 +41,7 @@ const Settings: React.FC = () => {
       if (index !== -1) {
         newSettings[index] = { ...newSettings[index], annualCount: count };
       } else {
-        newSettings.push({ category, frequency: 'irregular', annualCount: count, isLongTermInvestment: false });
+        newSettings.push({ category, annualCount: count, isLongTermInvestment: false });
       }
       
       return newSettings;
@@ -75,7 +59,6 @@ const Settings: React.FC = () => {
       } else {
         newSettings.push({ 
           category, 
-          frequency: 'irregular', 
           annualCount: 0, 
           isLongTermInvestment 
         });
@@ -89,9 +72,9 @@ const Settings: React.FC = () => {
   const handleEstimateAnnualCounts = () => {
     const newSettings = [...categorySettings];
     
-    // Only update irregular categories
+    // Update all categories that are not long-term investments
     newSettings.forEach((setting, index) => {
-      if (setting.frequency === 'irregular') {
+      if (!setting.isLongTermInvestment) {
         newSettings[index] = {
           ...setting,
           annualCount: estimateAnnualCount(setting.category)
@@ -130,7 +113,7 @@ const Settings: React.FC = () => {
   // Get category setting
   const getCategorySetting = (category: string) => {
     return categorySettings.find(setting => setting.category === category) || 
-      { category, frequency: 'regular' as const, annualCount: 0, isLongTermInvestment: false };
+      { category, annualCount: 12, isLongTermInvestment: false };
   };
   
   // Handle reset data
@@ -189,7 +172,7 @@ const Settings: React.FC = () => {
           
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="mb-4 text-sm text-gray-600">
-              カテゴリごとに「定期的」か「不定期」かを設定します。不定期の場合は年間発生回数も設定してください。
+              カテゴリごとに年間発生回数を設定します。長期投資の場合は年間発生回数は使用されません。
             </p>
             
             <div className="overflow-x-auto">
@@ -198,9 +181,6 @@ const Settings: React.FC = () => {
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       カテゴリ
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      頻度タイプ
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       年間発生回数
@@ -219,35 +199,11 @@ const Settings: React.FC = () => {
                           {CATEGORY_DISPLAY_NAMES[category]}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
-                          <div className="flex space-x-3">
-                            <label className="flex items-center">
-                              <input
-                                type="radio"
-                                name={`frequency-${category}`}
-                                checked={setting.frequency === 'regular'}
-                                onChange={() => handleFrequencyChange(category, 'regular')}
-                                className="mr-1"
-                              />
-                              <span className="text-sm">{FREQUENCY_DISPLAY_NAMES.regular}</span>
-                            </label>
-                            <label className="flex items-center">
-                              <input
-                                type="radio"
-                                name={`frequency-${category}`}
-                                checked={setting.frequency === 'irregular'}
-                                onChange={() => handleFrequencyChange(category, 'irregular')}
-                                className="mr-1"
-                              />
-                              <span className="text-sm">{FREQUENCY_DISPLAY_NAMES.irregular}</span>
-                            </label>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap">
                           <input
                             type="number"
                             value={setting.annualCount}
                             onChange={(e) => handleAnnualCountChange(category, e.target.value)}
-                            disabled={setting.frequency !== 'irregular'}
+                            disabled={setting.isLongTermInvestment}
                             min="0"
                             className="w-16 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400"
                           />
@@ -272,7 +228,7 @@ const Settings: React.FC = () => {
             </div>
             
             <p className="mt-4 text-sm text-gray-500">
-              不定期支出の年間発生回数は、月額換算の計算に使用されます。例えば、衣服を年4回購入する場合、1回の支出額を12で割った金額が月額換算値となります。
+              年間発生回数は、月額換算の計算に使用されます。例えば、衣服を年4回購入する場合、1回の支出額を12で割った金額が月額換算値となります。
             </p>
             <p className="mt-2 text-sm text-gray-500">
               長期投資フラグは、生涯にわたる投資を表します。このフラグがオンの場合、残りの寿命に基づいて計算されます。

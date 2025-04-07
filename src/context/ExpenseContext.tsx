@@ -17,7 +17,6 @@ interface ExpenseContextType {
   deleteExpense: (id: string) => void;
   userSettings: UserSettings;
   updateUserSettings: (settings: UserSettings) => void;
-  updateCategoryFrequency: (category: string, frequency: 'regular' | 'irregular') => void;
   updateCategoryAnnualCount: (category: string, annualCount: number) => void;
   updateCategoryLongTermInvestment: (category: string, isLongTermInvestment: boolean) => void;
   resetData: () => void;
@@ -77,39 +76,14 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     saveUserSettings(settings);
   };
   
-  // Update category frequency
-  const updateCategoryFrequency = (category: string, frequency: 'regular' | 'irregular') => {
-    const currentSettings = userSettings.categorySettings.find(setting => setting.category === category);
-    const annualCount = currentSettings?.annualCount || 0;
-    const isLongTermInvestment = currentSettings?.isLongTermInvestment || false;
-    
-    updateCategorySettings(category, frequency, annualCount, isLongTermInvestment);
-    
-    // Update local state
-    setUserSettings(prevSettings => {
-      const newCategorySettings = [...prevSettings.categorySettings];
-      const index = newCategorySettings.findIndex(setting => setting.category === category);
-      
-      if (index !== -1) {
-        newCategorySettings[index] = { ...newCategorySettings[index], frequency };
-      } else {
-        newCategorySettings.push({ category, frequency, annualCount, isLongTermInvestment });
-      }
-      
-      return {
-        ...prevSettings,
-        categorySettings: newCategorySettings
-      };
-    });
-  };
   
   // Update category annual count
   const updateCategoryAnnualCount = (category: string, annualCount: number) => {
     const currentSettings = userSettings.categorySettings.find(setting => setting.category === category);
-    const frequency = currentSettings?.frequency || 'regular';
     const isLongTermInvestment = currentSettings?.isLongTermInvestment || false;
     
-    updateCategorySettings(category, frequency, annualCount, isLongTermInvestment);
+    // Update in storage service
+    const updatedSettings = { category, annualCount, isLongTermInvestment };
     
     // Update local state
     setUserSettings(prevSettings => {
@@ -119,7 +93,7 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
       if (index !== -1) {
         newCategorySettings[index] = { ...newCategorySettings[index], annualCount };
       } else {
-        newCategorySettings.push({ category, frequency, annualCount, isLongTermInvestment });
+        newCategorySettings.push({ category, annualCount, isLongTermInvestment });
       }
       
       return {
@@ -132,10 +106,10 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
   // Update category long-term investment flag
   const updateCategoryLongTermInvestment = (category: string, isLongTermInvestment: boolean) => {
     const currentSettings = userSettings.categorySettings.find(setting => setting.category === category);
-    const frequency = currentSettings?.frequency || 'regular';
     const annualCount = currentSettings?.annualCount || 0;
     
-    updateCategorySettings(category, frequency, annualCount, isLongTermInvestment);
+    // Update in storage service
+    const updatedSettings = { category, annualCount, isLongTermInvestment };
     
     // Update local state
     setUserSettings(prevSettings => {
@@ -145,7 +119,7 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
       if (index !== -1) {
         newCategorySettings[index] = { ...newCategorySettings[index], isLongTermInvestment };
       } else {
-        newCategorySettings.push({ category, frequency, annualCount, isLongTermInvestment });
+        newCategorySettings.push({ category, annualCount, isLongTermInvestment });
       }
       
       return {
@@ -172,7 +146,6 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     deleteExpense,
     userSettings,
     updateUserSettings,
-    updateCategoryFrequency,
     updateCategoryAnnualCount,
     updateCategoryLongTermInvestment,
     resetData

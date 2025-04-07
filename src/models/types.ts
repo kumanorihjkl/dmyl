@@ -9,8 +9,7 @@ export interface Expense {
 
 export interface CategorySettings {
   category: string;     // Category name
-  frequency: 'regular' | 'irregular'; // Regular (daily/monthly) or irregular (one-time/infrequent)
-  annualCount: number;  // Annual occurrence count for irregular expenses
+  annualCount: number;  // Annual occurrence count
   isLongTermInvestment: boolean; // Whether this category is for long-term investments
 }
 
@@ -42,21 +41,21 @@ export const EXPENSE_CATEGORIES = [
   'appliance'
 ];
 
-// Default category frequency settings
+// Default category settings
 export const DEFAULT_CATEGORY_SETTINGS: CategorySettings[] = [
-  { category: 'food', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'housing', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'transportation', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'utilities', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'healthcare', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'entertainment', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'education', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'personal', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'other', frequency: 'regular', annualCount: 0, isLongTermInvestment: false },
-  { category: 'clothing', frequency: 'irregular', annualCount: 4, isLongTermInvestment: false },
-  { category: 'party', frequency: 'irregular', annualCount: 6, isLongTermInvestment: false },
-  { category: 'travel', frequency: 'irregular', annualCount: 2, isLongTermInvestment: false },
-  { category: 'appliance', frequency: 'irregular', annualCount: 1, isLongTermInvestment: false }
+  { category: 'food', annualCount: 365, isLongTermInvestment: false },
+  { category: 'housing', annualCount: 12, isLongTermInvestment: false },
+  { category: 'transportation', annualCount: 365, isLongTermInvestment: false },
+  { category: 'utilities', annualCount: 12, isLongTermInvestment: false },
+  { category: 'healthcare', annualCount: 12, isLongTermInvestment: false },
+  { category: 'entertainment', annualCount: 52, isLongTermInvestment: false },
+  { category: 'education', annualCount: 12, isLongTermInvestment: false },
+  { category: 'personal', annualCount: 52, isLongTermInvestment: false },
+  { category: 'other', annualCount: 12, isLongTermInvestment: false },
+  { category: 'clothing', annualCount: 4, isLongTermInvestment: false },
+  { category: 'party', annualCount: 6, isLongTermInvestment: false },
+  { category: 'travel', annualCount: 2, isLongTermInvestment: false },
+  { category: 'appliance', annualCount: 1, isLongTermInvestment: false }
 ];
 
 // Display names for categories
@@ -74,10 +73,4 @@ export const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   party: '交際費',
   travel: '旅行',
   appliance: '家電'
-};
-
-// Display names for frequency types
-export const FREQUENCY_DISPLAY_NAMES: Record<string, string> = {
-  regular: '定期的',
-  irregular: '不定期'
 };

@@ -5,7 +5,7 @@ import { getCategorySettings } from './storageService';
  * Calculate expense values based on category settings
  */
 export const calculateExpense = (expense: Expense, userAge: number): ExpenseCalculation => {
-  const { frequency, annualCount, isLongTermInvestment } = getCategorySettings(expense.category);
+  const { annualCount, isLongTermInvestment } = getCategorySettings(expense.category);
   const amount = expense.amount;
   
   // Handle long-term investment
@@ -20,38 +20,36 @@ export const calculateExpense = (expense: Expense, userAge: number): ExpenseCalc
     };
   }
   
-  // Handle regular expenses
-  if (frequency === 'regular') {
-    // For monthly expenses (annualCount = 12)
-    if (annualCount === 12) {
-      return {
-        daily: amount / 30, // Simplified: month = 30 days
-        monthly: amount,
-        yearly: amount * 12
-      };
-    }
-    // For yearly expenses (annualCount = 1)
-    else if (annualCount === 1) {
-      return {
-        daily: amount / 365,
-        monthly: amount / 12,
-        yearly: amount
-      };
-    }
-    // For other regular expenses, treat as daily occurrence
-    else {
-      return {
-        daily: amount,
-        monthly: amount * 30, // Simplified: month = 30 days
-        yearly: amount * 365
-      };
-    }
-  } 
-  // Handle irregular expenses
+  // Handle expenses based on annual count
+  // If annual count is 0, default to 1 to avoid division by zero
+  const count = Math.max(annualCount, 1);
+  
+  // For daily expenses (annualCount = 365)
+  if (annualCount >= 365) {
+    return {
+      daily: amount,
+      monthly: amount * 30, // Simplified: month = 30 days
+      yearly: amount * 365
+    };
+  }
+  // For monthly expenses (annualCount = 12)
+  else if (annualCount === 12) {
+    return {
+      daily: amount / 30, // Simplified: month = 30 days
+      monthly: amount,
+      yearly: amount * 12
+    };
+  }
+  // For yearly expenses (annualCount = 1)
+  else if (annualCount === 1) {
+    return {
+      daily: amount / 365,
+      monthly: amount / 12,
+      yearly: amount
+    };
+  }
+  // For other expenses with specific annual count
   else {
-    // If annual count is 0, default to 1 to avoid division by zero
-    const count = Math.max(annualCount, 1);
-    
     return {
       daily: (amount * count) / 365,
       monthly: (amount * count) / 12,

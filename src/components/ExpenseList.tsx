@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useExpense } from '../context/ExpenseContext';
 import { 
   Expense, 
-  CATEGORY_DISPLAY_NAMES,
-  FREQUENCY_DISPLAY_NAMES
+  CATEGORY_DISPLAY_NAMES
 } from '../models/types';
 import { calculateExpense, formatCurrency } from '../services/calculationService';
 import { getCategorySettings } from '../services/storageService';
@@ -55,12 +54,10 @@ const ExpenseList: React.FC = () => {
     }
   };
   
-  // Get background color based on category and frequency
+  // Get background color based on category
   const getCategoryColor = (category: string): string => {
-    const { frequency } = getCategorySettings(category);
-    
-    // Base colors for regular expenses
-    const regularColors: Record<string, string> = {
+    // Base colors for categories
+    const categoryColors: Record<string, string> = {
       food: 'bg-red-100',
       housing: 'bg-blue-100',
       transportation: 'bg-green-100',
@@ -76,23 +73,18 @@ const ExpenseList: React.FC = () => {
       appliance: 'bg-yellow-200'
     };
     
-    // Use a striped pattern for irregular expenses
-    if (frequency === 'irregular') {
-      return (regularColors[category] || 'bg-gray-100') + ' bg-stripes';
-    }
-    
-    return regularColors[category] || 'bg-gray-100';
+    return categoryColors[category] || 'bg-gray-100';
   };
   
-  // Get frequency display for a category
-  const getFrequencyDisplay = (category: string): string => {
-    const { frequency, annualCount } = getCategorySettings(category);
+  // Get annual count display for a category
+  const getAnnualCountDisplay = (category: string): string => {
+    const { annualCount, isLongTermInvestment } = getCategorySettings(category);
     
-    if (frequency === 'irregular' && annualCount > 0) {
-      return `${FREQUENCY_DISPLAY_NAMES[frequency]} (${annualCount}回/年)`;
+    if (isLongTermInvestment) {
+      return '長期投資';
     }
     
-    return FREQUENCY_DISPLAY_NAMES[frequency];
+    return `${annualCount}回/年`;
   };
   
   return (
@@ -188,7 +180,7 @@ const ExpenseList: React.FC = () => {
                         {CATEGORY_DISPLAY_NAMES[expense.category]}
                       </span>
                       <span className="text-xs text-gray-500 mt-1">
-                        {getFrequencyDisplay(expense.category)}
+                        {getAnnualCountDisplay(expense.category)}
                       </span>
                     </div>
                   </td>

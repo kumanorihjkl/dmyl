@@ -93,13 +93,12 @@ export const resetAllData = (): void => {
 /**
  * Get category settings for a specific category
  */
-export const getCategorySettings = (category: string): { frequency: 'regular' | 'irregular', annualCount: number, isLongTermInvestment: boolean } => {
+export const getCategorySettings = (category: string): { annualCount: number, isLongTermInvestment: boolean } => {
   const userSettings = getUserSettings();
   const categorySetting = userSettings.categorySettings.find(setting => setting.category === category);
   
   if (categorySetting) {
     return {
-      frequency: categorySetting.frequency,
       annualCount: categorySetting.annualCount,
       isLongTermInvestment: categorySetting.isLongTermInvestment
     };
@@ -110,14 +109,13 @@ export const getCategorySettings = (category: string): { frequency: 'regular' | 
   
   if (defaultSetting) {
     return {
-      frequency: defaultSetting.frequency,
       annualCount: defaultSetting.annualCount,
       isLongTermInvestment: defaultSetting.isLongTermInvestment
     };
   }
   
-  // Fallback to regular with 0 annual count and not a long-term investment
-  return { frequency: 'regular', annualCount: 0, isLongTermInvestment: false };
+  // Fallback to default values
+  return { annualCount: 12, isLongTermInvestment: false };
 };
 
 /**
@@ -125,7 +123,6 @@ export const getCategorySettings = (category: string): { frequency: 'regular' | 
  */
 export const updateCategorySettings = (
   category: string, 
-  frequency: 'regular' | 'irregular', 
   annualCount: number,
   isLongTermInvestment: boolean = false
 ): void => {
@@ -137,14 +134,12 @@ export const updateCategorySettings = (
     const currentIsLongTermInvestment = userSettings.categorySettings[index].isLongTermInvestment;
     userSettings.categorySettings[index] = { 
       category, 
-      frequency, 
       annualCount,
       isLongTermInvestment: isLongTermInvestment !== undefined ? isLongTermInvestment : currentIsLongTermInvestment
     };
   } else {
     userSettings.categorySettings.push({ 
       category, 
-      frequency, 
       annualCount,
       isLongTermInvestment: isLongTermInvestment || false
     });

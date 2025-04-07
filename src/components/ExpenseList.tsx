@@ -166,6 +166,9 @@ const ExpenseList: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  名前
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   日付
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -188,6 +191,9 @@ const ExpenseList: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedExpenses.map(expense => (
                 <tr key={expense.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {expense.name || '-'}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatDate(expense.date)}
                   </td>

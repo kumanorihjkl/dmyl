@@ -1,5 +1,6 @@
 export interface Expense {
   id: string;           // Unique ID
+  name?: string;        // Optional name for the expense
   date: string;         // Date (YYYY-MM-DD)
   category: string;     // Category (food, rent, utilities, etc.)
   amount: number;       // Amount

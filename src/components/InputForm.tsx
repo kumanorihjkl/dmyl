@@ -16,6 +16,7 @@ const InputForm: React.FC = () => {
     category: 'food',
     amount: '',
     type: 'once',
+    name: '',
     memo: ''
   });
   
@@ -41,6 +42,7 @@ const InputForm: React.FC = () => {
       category: formData.category,
       amount: Number(formData.amount),
       type: formData.type as 'once' | 'monthly' | 'yearly' | 'lifetime',
+      name: formData.name,
       memo: formData.memo
     });
     
@@ -50,6 +52,7 @@ const InputForm: React.FC = () => {
       category: 'food',
       amount: '',
       type: 'once',
+      name: '',
       memo: ''
     });
     
@@ -139,6 +142,22 @@ const InputForm: React.FC = () => {
                 </label>
               ))}
             </div>
+          </div>
+          
+          {/* Name */}
+          <div className="md:col-span-2">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              名前 (任意)
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="支出の名前"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
           
           {/* Memo */}

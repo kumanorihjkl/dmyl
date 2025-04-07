@@ -35,7 +35,7 @@ const Settings: React.FC = () => {
       if (index !== -1) {
         newSettings[index] = { ...newSettings[index], frequency };
       } else {
-        newSettings.push({ category, frequency, annualCount: 0 });
+        newSettings.push({ category, frequency, annualCount: 0, isLongTermInvestment: false });
       }
       
       return newSettings;
@@ -57,7 +57,28 @@ const Settings: React.FC = () => {
       if (index !== -1) {
         newSettings[index] = { ...newSettings[index], annualCount: count };
       } else {
-        newSettings.push({ category, frequency: 'irregular', annualCount: count });
+        newSettings.push({ category, frequency: 'irregular', annualCount: count, isLongTermInvestment: false });
+      }
+      
+      return newSettings;
+    });
+  };
+  
+  // Handle long-term investment flag change
+  const handleLongTermInvestmentChange = (category: string, isLongTermInvestment: boolean) => {
+    setCategorySettings(prevSettings => {
+      const newSettings = [...prevSettings];
+      const index = newSettings.findIndex(setting => setting.category === category);
+      
+      if (index !== -1) {
+        newSettings[index] = { ...newSettings[index], isLongTermInvestment };
+      } else {
+        newSettings.push({ 
+          category, 
+          frequency: 'irregular', 
+          annualCount: 0, 
+          isLongTermInvestment 
+        });
       }
       
       return newSettings;
@@ -109,7 +130,7 @@ const Settings: React.FC = () => {
   // Get category setting
   const getCategorySetting = (category: string) => {
     return categorySettings.find(setting => setting.category === category) || 
-      { category, frequency: 'regular' as const, annualCount: 0 };
+      { category, frequency: 'regular' as const, annualCount: 0, isLongTermInvestment: false };
   };
   
   // Handle reset data
@@ -184,6 +205,9 @@ const Settings: React.FC = () => {
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       年間発生回数
                     </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      長期投資
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -229,6 +253,17 @@ const Settings: React.FC = () => {
                           />
                           <span className="ml-1 text-sm text-gray-600">回/年</span>
                         </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={setting.isLongTermInvestment}
+                              onChange={(e) => handleLongTermInvestmentChange(category, e.target.checked)}
+                              className="mr-2"
+                            />
+                            <span className="text-sm">長期投資</span>
+                          </label>
+                        </td>
                       </tr>
                     );
                   })}
@@ -238,6 +273,9 @@ const Settings: React.FC = () => {
             
             <p className="mt-4 text-sm text-gray-500">
               不定期支出の年間発生回数は、月額換算の計算に使用されます。例えば、衣服を年4回購入する場合、1回の支出額を12で割った金額が月額換算値となります。
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              長期投資フラグは、生涯にわたる投資を表します。このフラグがオンの場合、残りの寿命に基づいて計算されます。
             </p>
           </div>
         </div>

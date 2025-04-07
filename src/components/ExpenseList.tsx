@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useExpense } from '../context/ExpenseContext';
 import { 
   Expense, 
-  CATEGORY_DISPLAY_NAMES, 
-  EXPENSE_TYPE_DISPLAY_NAMES,
+  CATEGORY_DISPLAY_NAMES,
   FREQUENCY_DISPLAY_NAMES
 } from '../models/types';
 import { calculateExpense, formatCurrency } from '../services/calculationService';
@@ -31,19 +30,8 @@ const ExpenseList: React.FC = () => {
   // Get display value based on mode
   const getDisplayValue = (expense: Expense): string => {
     if (displayMode === 'raw') {
-      // Display raw amount with appropriate suffix based on expense type
-      switch (expense.type) {
-        case 'once':
-          return formatCurrency(expense.amount);
-        case 'monthly':
-          return formatCurrency(expense.amount) + '/月';
-        case 'yearly':
-          return formatCurrency(expense.amount) + '/年';
-        case 'lifetime':
-          return formatCurrency(expense.amount) + ' (生涯)';
-        default:
-          return formatCurrency(expense.amount);
-      }
+      // Display raw amount
+      return formatCurrency(expense.amount);
     }
     
     const calculation = calculateExpense(expense, userSettings.age);
@@ -178,9 +166,6 @@ const ExpenseList: React.FC = () => {
                   金額
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  タイプ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   メモ
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -209,9 +194,6 @@ const ExpenseList: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {getDisplayValue(expense)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {EXPENSE_TYPE_DISPLAY_NAMES[expense.type]}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                     {expense.memo}

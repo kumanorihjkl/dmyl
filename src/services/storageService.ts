@@ -93,14 +93,15 @@ export const resetAllData = (): void => {
 /**
  * Get category settings for a specific category
  */
-export const getCategorySettings = (category: string): { frequency: 'regular' | 'irregular', annualCount: number } => {
+export const getCategorySettings = (category: string): { frequency: 'regular' | 'irregular', annualCount: number, isLongTermInvestment: boolean } => {
   const userSettings = getUserSettings();
   const categorySetting = userSettings.categorySettings.find(setting => setting.category === category);
   
   if (categorySetting) {
     return {
       frequency: categorySetting.frequency,
-      annualCount: categorySetting.annualCount
+      annualCount: categorySetting.annualCount,
+      isLongTermInvestment: categorySetting.isLongTermInvestment
     };
   }
   
@@ -110,25 +111,43 @@ export const getCategorySettings = (category: string): { frequency: 'regular' | 
   if (defaultSetting) {
     return {
       frequency: defaultSetting.frequency,
-      annualCount: defaultSetting.annualCount
+      annualCount: defaultSetting.annualCount,
+      isLongTermInvestment: defaultSetting.isLongTermInvestment
     };
   }
   
-  // Fallback to regular with 0 annual count
-  return { frequency: 'regular', annualCount: 0 };
+  // Fallback to regular with 0 annual count and not a long-term investment
+  return { frequency: 'regular', annualCount: 0, isLongTermInvestment: false };
 };
 
 /**
  * Update category settings
  */
-export const updateCategorySettings = (category: string, frequency: 'regular' | 'irregular', annualCount: number): void => {
+export const updateCategorySettings = (
+  category: string, 
+  frequency: 'regular' | 'irregular', 
+  annualCount: number,
+  isLongTermInvestment: boolean = false
+): void => {
   const userSettings = getUserSettings();
   const index = userSettings.categorySettings.findIndex(setting => setting.category === category);
   
   if (index !== -1) {
-    userSettings.categorySettings[index] = { category, frequency, annualCount };
+    // Preserve the existing isLongTermInvestment value if not explicitly provided
+    const currentIsLongTermInvestment = userSettings.categorySettings[index].isLongTermInvestment;
+    userSettings.categorySettings[index] = { 
+      category, 
+      frequency, 
+      annualCount,
+      isLongTermInvestment: isLongTermInvestment !== undefined ? isLongTermInvestment : currentIsLongTermInvestment
+    };
   } else {
-    userSettings.categorySettings.push({ category, frequency, annualCount });
+    userSettings.categorySettings.push({ 
+      category, 
+      frequency, 
+      annualCount,
+      isLongTermInvestment: isLongTermInvestment || false
+    });
   }
   
   saveUserSettings(userSettings);
@@ -145,7 +164,6 @@ export const estimateAnnualCount = (category: string): number => {
   // Filter expenses for the category in the past year
   const categoryExpenses = expenses.filter(expense => 
     expense.category === category && 
-    expense.type === 'once' &&
     new Date(expense.date) >= oneYearAgo
   );
   

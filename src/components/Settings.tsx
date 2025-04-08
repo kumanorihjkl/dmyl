@@ -8,18 +8,35 @@ import {
 import { estimateAnnualCount } from '../services/storageService';
 
 const Settings: React.FC = () => {
-  const { userSettings, updateUserSettings, resetData, addCategory } = useExpense();
+  const { 
+    userSettings, 
+    updateUserSettings, 
+    resetData, 
+    addCategory,
+    editCategory,
+    deleteCategory 
+  } = useExpense();
+  
   const [age, setAge] = useState(userSettings.age.toString());
   const [categorySettings, setCategorySettings] = useState<CategorySettings[]>(userSettings.categorySettings);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showSaveNotification, setShowSaveNotification] = useState(false);
   const [showEstimateConfirm, setShowEstimateConfirm] = useState(false);
   const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
+  const [showEditCategoryForm, setShowEditCategoryForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newCategory, setNewCategory] = useState({
     displayName: '',
     annualCount: '12',
     isLongTermInvestment: false
   });
+  const [editingCategory, setEditingCategory] = useState<{
+    id: string;
+    displayName: string;
+    annualCount: string;
+    isLongTermInvestment: boolean;
+  } | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   
   // Load category settings from user settings
   useEffect(() => {
@@ -103,6 +120,94 @@ const Settings: React.FC = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  // Start editing a category
+  const handleStartEditCategory = (categoryId: string) => {
+    // Only allow editing custom categories
+    if (!categoryId.startsWith('custom_')) {
+      alert('デフォルトカテゴリは編集できません。');
+      return;
+    }
+    
+    const setting = getCategorySetting(categoryId);
+    
+    setEditingCategory({
+      id: categoryId,
+      displayName: CATEGORY_DISPLAY_NAMES[categoryId] || '',
+      annualCount: setting.annualCount.toString(),
+      isLongTermInvestment: setting.isLongTermInvestment
+    });
+    
+    setShowEditCategoryForm(true);
+  };
+  
+  // Handle edit category input change
+  const handleEditCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editingCategory) return;
+    
+    const { name, value, type, checked } = e.target;
+    setEditingCategory(prev => ({
+      ...prev!,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+  
+  // Handle edit category submit
+  const handleEditCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingCategory) return;
+    
+    // Validate inputs
+    if (!editingCategory.displayName) {
+      alert('表示名は必須です。');
+      return;
+    }
+    
+    // Edit the category
+    editCategory(
+      editingCategory.id,
+      editingCategory.displayName,
+      parseInt(editingCategory.annualCount) || 12,
+      editingCategory.isLongTermInvestment
+    );
+    
+    // Reset form and hide it
+    setEditingCategory(null);
+    setShowEditCategoryForm(false);
+    
+    // Show notification
+    setShowSaveNotification(true);
+    setTimeout(() => setShowSaveNotification(false), 3000);
+  };
+  
+  // Start delete category process
+  const handleStartDeleteCategory = (categoryId: string) => {
+    // Only allow deleting custom categories
+    if (!categoryId.startsWith('custom_')) {
+      alert('デフォルトカテゴリは削除できません。');
+      return;
+    }
+    
+    setCategoryToDelete(categoryId);
+    setShowDeleteConfirm(true);
+  };
+  
+  // Handle delete category confirm
+  const handleDeleteCategory = () => {
+    if (!categoryToDelete) return;
+    
+    // Delete the category
+    deleteCategory(categoryToDelete);
+    
+    // Reset state and hide dialog
+    setCategoryToDelete(null);
+    setShowDeleteConfirm(false);
+    
+    // Show notification
+    setShowSaveNotification(true);
+    setTimeout(() => setShowSaveNotification(false), 3000);
   };
 
   // Handle add new category
@@ -245,6 +350,9 @@ const Settings: React.FC = () => {
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       長期投資
                     </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      操作
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -254,6 +362,9 @@ const Settings: React.FC = () => {
                       <tr key={category}>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                           {CATEGORY_DISPLAY_NAMES[category]}
+                          {category.startsWith('custom_') && (
+                            <span className="ml-2 text-xs text-gray-500">(カスタム)</span>
+                          )}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
                           <input
@@ -276,6 +387,28 @@ const Settings: React.FC = () => {
                             />
                             <span className="text-sm">長期投資</span>
                           </label>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          {category.startsWith('custom_') ? (
+                            <div className="flex space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditCategory(category)}
+                                className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150"
+                              >
+                                編集
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStartDeleteCategory(category)}
+                                className="px-2 py-1 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-150"
+                              >
+                                削除
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-500">デフォルト</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -432,6 +565,104 @@ const Settings: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Edit Category Form */}
+      {showEditCategoryForm && editingCategory && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">カテゴリ編集</h3>
+            
+            <form onSubmit={handleEditCategory}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="editDisplayName" className="block text-sm font-medium text-gray-700 mb-1">
+                    表示名
+                  </label>
+                  <input
+                    type="text"
+                    id="editDisplayName"
+                    name="displayName"
+                    value={editingCategory.displayName}
+                    onChange={handleEditCategoryChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="editAnnualCount" className="block text-sm font-medium text-gray-700 mb-1">
+                    年間発生回数
+                  </label>
+                  <input
+                    type="number"
+                    id="editAnnualCount"
+                    name="annualCount"
+                    value={editingCategory.annualCount}
+                    onChange={handleEditCategoryChange}
+                    min="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isLongTermInvestment"
+                      checked={editingCategory.isLongTermInvestment}
+                      onChange={handleEditCategoryChange}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">長期投資</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditCategoryForm(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-150"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150"
+                >
+                  更新
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Category Confirmation */}
+      {showDeleteConfirm && categoryToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">カテゴリを削除</h3>
+            <p className="text-gray-600 mb-6">
+              カテゴリ「{CATEGORY_DISPLAY_NAMES[categoryToDelete]}」を削除しますか？このカテゴリを使用している支出は「その他」カテゴリに移動されます。
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-150"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDeleteCategory}
+                className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-150"
+              >
+                削除
+              </button>
+            </div>
           </div>
         </div>
       )}

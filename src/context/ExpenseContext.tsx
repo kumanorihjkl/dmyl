@@ -3,7 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { 
   Expense, 
   UserSettings, 
-  DEFAULT_CATEGORY_SETTINGS, 
+  DEFAULT_CATEGORY_SETTINGS,
+  EXPENSE_CATEGORIES,
+  CATEGORY_DISPLAY_NAMES,
   addCategory as addCategoryToTypes 
 } from '../models/types';
 import {
@@ -25,6 +27,8 @@ interface ExpenseContextType {
   updateCategoryAnnualCount: (category: string, annualCount: number) => void;
   updateCategoryLongTermInvestment: (category: string, isLongTermInvestment: boolean) => void;
   addCategory: (displayName: string, annualCount?: number, isLongTermInvestment?: boolean) => string;
+  editCategory: (categoryId: string, displayName: string, annualCount?: number, isLongTermInvestment?: boolean) => void;
+  deleteCategory: (categoryId: string) => void;
   resetData: () => void;
 }
 
@@ -188,6 +192,112 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     return categoryId;
   };
 
+  // Edit a category
+  const editCategory = (
+    categoryId: string,
+    displayName: string,
+    annualCount: number = 12,
+    isLongTermInvestment: boolean = false
+  ): void => {
+    // Only allow editing custom categories
+    if (!categoryId.startsWith('custom_')) {
+      console.warn('Cannot edit built-in category:', categoryId);
+      return;
+    }
+    
+    // Update the display name in the global map
+    // @ts-ignore - We know this is mutable
+    CATEGORY_DISPLAY_NAMES[categoryId] = displayName;
+    
+    // Update user settings with the edited category
+    setUserSettings(prevSettings => {
+      const newCategorySettings = [...prevSettings.categorySettings];
+      const index = newCategorySettings.findIndex(setting => setting.category === categoryId);
+      
+      if (index !== -1) {
+        newCategorySettings[index] = { 
+          category: categoryId, 
+          annualCount, 
+          isLongTermInvestment 
+        };
+      } else {
+        newCategorySettings.push({ 
+          category: categoryId, 
+          annualCount, 
+          isLongTermInvestment 
+        });
+      }
+      
+      const updatedSettings = {
+        ...prevSettings,
+        categorySettings: newCategorySettings
+      };
+      
+      // Save to storage
+      saveUserSettings(updatedSettings);
+      
+      return updatedSettings;
+    });
+  };
+  
+  // Delete a category
+  const deleteCategory = (categoryId: string): void => {
+    // Only allow deleting custom categories
+    if (!categoryId.startsWith('custom_')) {
+      console.warn('Cannot delete built-in category:', categoryId);
+      return;
+    }
+    
+    // Remove from EXPENSE_CATEGORIES
+    const categoryIndex = EXPENSE_CATEGORIES.indexOf(categoryId);
+    if (categoryIndex !== -1) {
+      // @ts-ignore - We know this is mutable
+      EXPENSE_CATEGORIES.splice(categoryIndex, 1);
+    }
+    
+    // Remove from CATEGORY_DISPLAY_NAMES
+    if (CATEGORY_DISPLAY_NAMES[categoryId]) {
+      // @ts-ignore - We know this is mutable
+      delete CATEGORY_DISPLAY_NAMES[categoryId];
+    }
+    
+    // Update user settings to remove the category
+    setUserSettings(prevSettings => {
+      // Remove from categorySettings
+      const newCategorySettings = prevSettings.categorySettings.filter(
+        setting => setting.category !== categoryId
+      );
+      
+      // Remove from customCategories
+      const customCategories = prevSettings.customCategories || [];
+      const updatedCustomCategories = customCategories.filter(id => id !== categoryId);
+      
+      const updatedSettings = {
+        ...prevSettings,
+        categorySettings: newCategorySettings,
+        customCategories: updatedCustomCategories
+      };
+      
+      // Save to storage
+      saveUserSettings(updatedSettings);
+      
+      return updatedSettings;
+    });
+    
+    // Update any expenses that used this category to use 'other' instead
+    const allExpenses = getExpenses();
+    const updatedExpenses = allExpenses.map(expense => {
+      if (expense.category === categoryId) {
+        return { ...expense, category: 'other' };
+      }
+      return expense;
+    });
+    
+    // Save updated expenses
+    saveExpenses(updatedExpenses);
+    setExpenses(updatedExpenses);
+  };
+
   const value = {
     expenses,
     addExpense,
@@ -198,6 +308,8 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     updateCategoryAnnualCount,
     updateCategoryLongTermInvestment,
     addCategory,
+    editCategory,
+    deleteCategory,
     resetData
   };
 

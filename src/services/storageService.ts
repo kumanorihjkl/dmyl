@@ -1,4 +1,11 @@
-import { Expense, UserSettings, DEFAULT_CATEGORY_SETTINGS } from '../models/types';
+import { 
+  Expense, 
+  UserSettings, 
+  DEFAULT_CATEGORY_SETTINGS,
+  EXPENSE_CATEGORIES,
+  CATEGORY_DISPLAY_NAMES,
+  addCategory
+} from '../models/types';
 
 // Keys for localStorage
 const EXPENSES_KEY = 'expenses';
@@ -7,7 +14,8 @@ const USER_SETTINGS_KEY = 'userSettings';
 // Default user settings
 const DEFAULT_USER_SETTINGS: UserSettings = {
   age: 30,
-  categorySettings: DEFAULT_CATEGORY_SETTINGS
+  categorySettings: DEFAULT_CATEGORY_SETTINGS,
+  categoryDisplayNames: { ...CATEGORY_DISPLAY_NAMES }
 };
 
 /**
@@ -72,6 +80,63 @@ export const getUserSettings = (): UserSettings => {
     parsedSettings.categorySettings = DEFAULT_CATEGORY_SETTINGS;
   }
   
+  // If the stored settings don't have categoryDisplayNames, add the default ones
+  if (!parsedSettings.categoryDisplayNames) {
+    parsedSettings.categoryDisplayNames = { ...CATEGORY_DISPLAY_NAMES };
+  } else {
+    // Restore custom display names to the global CATEGORY_DISPLAY_NAMES
+    Object.entries(parsedSettings.categoryDisplayNames).forEach(([categoryId, displayName]) => {
+      // @ts-ignore - We know this is mutable
+      CATEGORY_DISPLAY_NAMES[categoryId] = displayName;
+    });
+  }
+  
+  // Restore custom categories if they exist
+  if (parsedSettings.customCategories && Array.isArray(parsedSettings.customCategories)) {
+    // For each custom category, ensure it's added to the global categories
+    parsedSettings.customCategories.forEach(categoryId => {
+      const categorySetting = parsedSettings.categorySettings.find(
+        setting => setting.category === categoryId
+      );
+      
+      if (categorySetting) {
+        // If the category is not already in the global lists, add it
+        if (!EXPENSE_CATEGORIES.includes(categoryId)) {
+          // Get the display name from the stored display names or use the category ID as fallback
+          const displayName = parsedSettings.categoryDisplayNames?.[categoryId] || categoryId;
+          
+          // We need to manually add this category to the global lists
+          // But we can't directly modify the imported variables, so we'll use a workaround
+          
+          // First, create a temporary function to add a category with a specific ID
+          const addCategoryWithId = (id: string, name: string, count: number, isLTI: boolean) => {
+            // Use the module's exported variables indirectly
+            if (!EXPENSE_CATEGORIES.includes(id)) {
+              // @ts-ignore - We know this is mutable even though TypeScript thinks it's not
+              EXPENSE_CATEGORIES.push(id);
+              // @ts-ignore
+              CATEGORY_DISPLAY_NAMES[id] = name;
+              // @ts-ignore
+              DEFAULT_CATEGORY_SETTINGS.push({ 
+                category: id, 
+                annualCount: count, 
+                isLongTermInvestment: isLTI 
+              });
+            }
+          };
+          
+          // Call our helper function
+          addCategoryWithId(
+            categoryId, 
+            displayName, 
+            categorySetting.annualCount, 
+            categorySetting.isLongTermInvestment
+          );
+        }
+      }
+    });
+  }
+  
   return parsedSettings;
 };
 
@@ -93,14 +158,14 @@ export const resetAllData = (): void => {
 /**
  * Get category settings for a specific category
  */
-export const getCategorySettings = (category: string): { frequency: 'regular' | 'irregular', annualCount: number } => {
+export const getCategorySettings = (category: string): { annualCount: number, isLongTermInvestment: boolean } => {
   const userSettings = getUserSettings();
   const categorySetting = userSettings.categorySettings.find(setting => setting.category === category);
   
   if (categorySetting) {
     return {
-      frequency: categorySetting.frequency,
-      annualCount: categorySetting.annualCount
+      annualCount: categorySetting.annualCount,
+      isLongTermInvestment: categorySetting.isLongTermInvestment
     };
   }
   
@@ -109,26 +174,40 @@ export const getCategorySettings = (category: string): { frequency: 'regular' | 
   
   if (defaultSetting) {
     return {
-      frequency: defaultSetting.frequency,
-      annualCount: defaultSetting.annualCount
+      annualCount: defaultSetting.annualCount,
+      isLongTermInvestment: defaultSetting.isLongTermInvestment
     };
   }
   
-  // Fallback to regular with 0 annual count
-  return { frequency: 'regular', annualCount: 0 };
+  // Fallback to default values
+  return { annualCount: 12, isLongTermInvestment: false };
 };
 
 /**
  * Update category settings
  */
-export const updateCategorySettings = (category: string, frequency: 'regular' | 'irregular', annualCount: number): void => {
+export const updateCategorySettings = (
+  category: string, 
+  annualCount: number,
+  isLongTermInvestment: boolean = false
+): void => {
   const userSettings = getUserSettings();
   const index = userSettings.categorySettings.findIndex(setting => setting.category === category);
   
   if (index !== -1) {
-    userSettings.categorySettings[index] = { category, frequency, annualCount };
+    // Preserve the existing isLongTermInvestment value if not explicitly provided
+    const currentIsLongTermInvestment = userSettings.categorySettings[index].isLongTermInvestment;
+    userSettings.categorySettings[index] = { 
+      category, 
+      annualCount,
+      isLongTermInvestment: isLongTermInvestment !== undefined ? isLongTermInvestment : currentIsLongTermInvestment
+    };
   } else {
-    userSettings.categorySettings.push({ category, frequency, annualCount });
+    userSettings.categorySettings.push({ 
+      category, 
+      annualCount,
+      isLongTermInvestment: isLongTermInvestment || false
+    });
   }
   
   saveUserSettings(userSettings);
@@ -145,7 +224,6 @@ export const estimateAnnualCount = (category: string): number => {
   // Filter expenses for the category in the past year
   const categoryExpenses = expenses.filter(expense => 
     expense.category === category && 
-    expense.type === 'once' &&
     new Date(expense.date) >= oneYearAgo
   );
   

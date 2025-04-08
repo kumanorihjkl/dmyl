@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useExpense } from '../context/ExpenseContext';
 import { 
   EXPENSE_CATEGORIES, 
-  CATEGORY_DISPLAY_NAMES, 
-  EXPENSE_TYPE_DISPLAY_NAMES 
+  CATEGORY_DISPLAY_NAMES
 } from '../models/types';
 
 const InputForm: React.FC = () => {
@@ -15,7 +14,6 @@ const InputForm: React.FC = () => {
     date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
     category: 'food',
     amount: '',
-    type: 'once',
     name: '',
     memo: ''
   });
@@ -41,7 +39,6 @@ const InputForm: React.FC = () => {
       date: formData.date,
       category: formData.category,
       amount: Number(formData.amount),
-      type: formData.type as 'once' | 'monthly' | 'yearly' | 'lifetime',
       name: formData.name,
       memo: formData.memo
     });
@@ -51,7 +48,6 @@ const InputForm: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       category: 'food',
       amount: '',
-      type: 'once',
       name: '',
       memo: ''
     });
@@ -122,27 +118,6 @@ const InputForm: React.FC = () => {
             />
           </div>
           
-          {/* Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              支出タイプ
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(EXPENSE_TYPE_DISPLAY_NAMES).map(([type, label]) => (
-                <label key={type} className="flex items-center">
-                  <input
-                    type="radio"
-                    name="type"
-                    value={type}
-                    checked={formData.type === type}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
           
           {/* Name */}
           <div className="md:col-span-2">

@@ -4,19 +4,20 @@ export interface Expense {
   date: string;         // Date (YYYY-MM-DD)
   category: string;     // Category (food, rent, utilities, etc.)
   amount: number;       // Amount
-  type: 'once' | 'monthly' | 'yearly' | 'lifetime'; // Expense type
   memo?: string;        // Optional memo
 }
 
 export interface CategorySettings {
   category: string;     // Category name
-  frequency: 'regular' | 'irregular'; // Regular (daily/monthly) or irregular (one-time/infrequent)
-  annualCount: number;  // Annual occurrence count for irregular expenses
+  annualCount: number;  // Annual occurrence count
+  isLongTermInvestment: boolean; // Whether this category is for long-term investments
 }
 
 export interface UserSettings {
   age: number;          // User's age
   categorySettings: CategorySettings[]; // Category settings
+  customCategories?: string[]; // Custom categories added by the user
+  categoryDisplayNames?: Record<string, string>; // Custom category display names
 }
 
 export interface ExpenseCalculation {
@@ -26,7 +27,7 @@ export interface ExpenseCalculation {
 }
 
 // Categories for expenses
-export const EXPENSE_CATEGORIES = [
+export let EXPENSE_CATEGORIES = [
   'food',
   'housing',
   'transportation',
@@ -42,25 +43,25 @@ export const EXPENSE_CATEGORIES = [
   'appliance'
 ];
 
-// Default category frequency settings
-export const DEFAULT_CATEGORY_SETTINGS: CategorySettings[] = [
-  { category: 'food', frequency: 'regular', annualCount: 0 },
-  { category: 'housing', frequency: 'regular', annualCount: 0 },
-  { category: 'transportation', frequency: 'regular', annualCount: 0 },
-  { category: 'utilities', frequency: 'regular', annualCount: 0 },
-  { category: 'healthcare', frequency: 'regular', annualCount: 0 },
-  { category: 'entertainment', frequency: 'regular', annualCount: 0 },
-  { category: 'education', frequency: 'regular', annualCount: 0 },
-  { category: 'personal', frequency: 'regular', annualCount: 0 },
-  { category: 'other', frequency: 'regular', annualCount: 0 },
-  { category: 'clothing', frequency: 'irregular', annualCount: 4 },
-  { category: 'party', frequency: 'irregular', annualCount: 6 },
-  { category: 'travel', frequency: 'irregular', annualCount: 2 },
-  { category: 'appliance', frequency: 'irregular', annualCount: 1 }
+// Default category settings
+export let DEFAULT_CATEGORY_SETTINGS: CategorySettings[] = [
+  { category: 'food', annualCount: 365, isLongTermInvestment: false },
+  { category: 'housing', annualCount: 12, isLongTermInvestment: false },
+  { category: 'transportation', annualCount: 365, isLongTermInvestment: false },
+  { category: 'utilities', annualCount: 12, isLongTermInvestment: false },
+  { category: 'healthcare', annualCount: 12, isLongTermInvestment: false },
+  { category: 'entertainment', annualCount: 52, isLongTermInvestment: false },
+  { category: 'education', annualCount: 12, isLongTermInvestment: false },
+  { category: 'personal', annualCount: 52, isLongTermInvestment: false },
+  { category: 'other', annualCount: 12, isLongTermInvestment: false },
+  { category: 'clothing', annualCount: 4, isLongTermInvestment: false },
+  { category: 'party', annualCount: 6, isLongTermInvestment: false },
+  { category: 'travel', annualCount: 2, isLongTermInvestment: false },
+  { category: 'appliance', annualCount: 1, isLongTermInvestment: false }
 ];
 
 // Display names for categories
-export const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
+export let CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   food: '食費',
   housing: '住居費',
   transportation: '交通費',
@@ -76,16 +77,40 @@ export const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   appliance: '家電'
 };
 
-// Display names for frequency types
-export const FREQUENCY_DISPLAY_NAMES: Record<string, string> = {
-  regular: '定期的',
-  irregular: '不定期'
+// Generate a unique category ID
+export const generateCategoryId = (): string => {
+  // Find the highest numeric ID
+  const numericIds = EXPENSE_CATEGORIES
+    .filter(id => /^custom_\d+$/.test(id))
+    .map(id => parseInt(id.replace('custom_', ''), 10));
+  
+  // Get the max ID or 0 if no custom categories exist yet
+  const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
+  
+  // Return the next ID
+  return `custom_${maxId + 1}`;
 };
 
-// Display names for expense types
-export const EXPENSE_TYPE_DISPLAY_NAMES: Record<string, string> = {
-  once: '単発',
-  monthly: '月額',
-  yearly: '年額',
-  lifetime: '長期投資'
+// Function to add a new category
+export const addCategory = (
+  displayName: string, 
+  annualCount: number = 12, 
+  isLongTermInvestment: boolean = false
+): string => {
+  // Generate a unique category ID
+  const categoryId = generateCategoryId();
+  
+  // Add to EXPENSE_CATEGORIES
+  EXPENSE_CATEGORIES = [...EXPENSE_CATEGORIES, categoryId];
+  
+  // Add to CATEGORY_DISPLAY_NAMES
+  CATEGORY_DISPLAY_NAMES = { ...CATEGORY_DISPLAY_NAMES, [categoryId]: displayName };
+  
+  // Add to DEFAULT_CATEGORY_SETTINGS
+  DEFAULT_CATEGORY_SETTINGS = [
+    ...DEFAULT_CATEGORY_SETTINGS,
+    { category: categoryId, annualCount, isLongTermInvestment }
+  ];
+  
+  return categoryId;
 };

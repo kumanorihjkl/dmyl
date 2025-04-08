@@ -177,10 +177,15 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
         customCategories.push(categoryId);
       }
       
+      // Save category display name
+      const categoryDisplayNames = prevSettings.categoryDisplayNames || { ...CATEGORY_DISPLAY_NAMES };
+      categoryDisplayNames[categoryId] = displayName;
+      
       const updatedSettings = {
         ...prevSettings,
         categorySettings: newCategorySettings,
-        customCategories
+        customCategories,
+        categoryDisplayNames
       };
       
       // Save to storage
@@ -228,9 +233,14 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
         });
       }
       
+      // Update category display name
+      const categoryDisplayNames = prevSettings.categoryDisplayNames || { ...CATEGORY_DISPLAY_NAMES };
+      categoryDisplayNames[categoryId] = displayName;
+      
       const updatedSettings = {
         ...prevSettings,
-        categorySettings: newCategorySettings
+        categorySettings: newCategorySettings,
+        categoryDisplayNames
       };
       
       // Save to storage
@@ -272,10 +282,17 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
       const customCategories = prevSettings.customCategories || [];
       const updatedCustomCategories = customCategories.filter(id => id !== categoryId);
       
+      // Remove from categoryDisplayNames
+      const categoryDisplayNames = prevSettings.categoryDisplayNames || { ...CATEGORY_DISPLAY_NAMES };
+      if (categoryDisplayNames[categoryId]) {
+        delete categoryDisplayNames[categoryId];
+      }
+      
       const updatedSettings = {
         ...prevSettings,
         categorySettings: newCategorySettings,
-        customCategories: updatedCustomCategories
+        customCategories: updatedCustomCategories,
+        categoryDisplayNames
       };
       
       // Save to storage

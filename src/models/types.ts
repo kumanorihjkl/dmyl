@@ -17,6 +17,7 @@ export interface UserSettings {
   age: number;          // User's age
   categorySettings: CategorySettings[]; // Category settings
   customCategories?: string[]; // Custom categories added by the user
+  categoryDisplayNames?: Record<string, string>; // Custom category display names
 }
 
 export interface ExpenseCalculation {

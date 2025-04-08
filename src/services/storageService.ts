@@ -14,7 +14,8 @@ const USER_SETTINGS_KEY = 'userSettings';
 // Default user settings
 const DEFAULT_USER_SETTINGS: UserSettings = {
   age: 30,
-  categorySettings: DEFAULT_CATEGORY_SETTINGS
+  categorySettings: DEFAULT_CATEGORY_SETTINGS,
+  categoryDisplayNames: { ...CATEGORY_DISPLAY_NAMES }
 };
 
 /**
@@ -79,6 +80,17 @@ export const getUserSettings = (): UserSettings => {
     parsedSettings.categorySettings = DEFAULT_CATEGORY_SETTINGS;
   }
   
+  // If the stored settings don't have categoryDisplayNames, add the default ones
+  if (!parsedSettings.categoryDisplayNames) {
+    parsedSettings.categoryDisplayNames = { ...CATEGORY_DISPLAY_NAMES };
+  } else {
+    // Restore custom display names to the global CATEGORY_DISPLAY_NAMES
+    Object.entries(parsedSettings.categoryDisplayNames).forEach(([categoryId, displayName]) => {
+      // @ts-ignore - We know this is mutable
+      CATEGORY_DISPLAY_NAMES[categoryId] = displayName;
+    });
+  }
+  
   // Restore custom categories if they exist
   if (parsedSettings.customCategories && Array.isArray(parsedSettings.customCategories)) {
     // For each custom category, ensure it's added to the global categories
@@ -90,8 +102,8 @@ export const getUserSettings = (): UserSettings => {
       if (categorySetting) {
         // If the category is not already in the global lists, add it
         if (!EXPENSE_CATEGORIES.includes(categoryId)) {
-          // Get the display name from the settings or use the category ID as fallback
-          const displayName = CATEGORY_DISPLAY_NAMES[categoryId] || categoryId;
+          // Get the display name from the stored display names or use the category ID as fallback
+          const displayName = parsedSettings.categoryDisplayNames?.[categoryId] || categoryId;
           
           // We need to manually add this category to the global lists
           // But we can't directly modify the imported variables, so we'll use a workaround
